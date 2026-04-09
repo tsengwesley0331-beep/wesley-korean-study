@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>韓語學習工作站 Pro Max</title>
+    <style>
+        :root {
+            --primary: #4a6cf7;
+            --secondary: #f8faff;
+            --dark: #1e293b;
+            --accent: #fb7185;
+            --success: #10b981;
+            --sidebar-width: 280px;
+        }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: var(--secondary); margin: 0; display: flex; color: var(--dark); height: 100vh; overflow: hidden; }
+        
+        #login-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 2000; display: flex; justify-content: center; align-items: center; color: white; }
+        .login-box { background: var(--dark); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); width: 400px; }
+        input { padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #334155; width: 100%; background: #0f172a; color: white; font-size: 16px; }
+        
+        #sidebar { width: var(--sidebar-width); background: white; height: 100%; padding: 30px 20px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow-y: auto; }
+        .profile-area { text-align: center; margin-bottom: 40px; }
+        .avatar { width: 90px; height: 90px; background: linear-gradient(135deg, var(--primary), #818cf8); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; box-shadow: 0 10px 15px -3px rgba(74, 108, 247, 0.3); }
+        .score-badge { background: var(--accent); color: white; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; }
+        
+        .nav-menu button { width: 100%; padding: 12px 15px; margin: 5px 0; border: none; background: transparent; text-align: left; border-radius: 10px; cursor: pointer; color: #64748b; font-weight: 600; font-size: 15px; display: flex; align-items: center; }
+        .nav-menu button:hover { background: #f1f5f9; color: var(--primary); }
+        .nav-menu button.active { background: var(--primary); color: white; }
+
+        #main-viewport { flex: 1; padding: 40px; overflow-y: auto; position: relative; }
+        .content-section { display: none; animation: fadeIn 0.4s ease; max-width: 1000px; margin: 0 auto; }
+        .content-section.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h2 { margin-top: 0; color: var(--dark); border-left: 6px solid var(--primary); padding-left: 15px; }
+        h3 { color: var(--primary); margin-top: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        h4 { color: #334155; }
+        
+        .hangul-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin: 20px 0; }
+        .char-card { background: #f1f5f9; padding: 15px; text-align: center; border-radius: 12px; border: 1px solid #e2e8f0; cursor: pointer; }
+        .char-card:hover { background: var(--primary); color: white; transform: scale(1.05); }
+        .char-card:hover span { color: white; }
+        .char-card span { display: block; font-size: 28px; font-weight: bold; color: var(--primary); }
+
+        .grammar-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
+        .grammar-table th, .grammar-table td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        .grammar-table th { background: #f8fafc; color: var(--primary); }
+        .grammar-box { background: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid var(--success); margin-bottom: 20px; }
+
+        .difficulty-select { display: flex; gap: 15px; justify-content: center; margin: 30px 0; }
+        .diff-btn { padding: 15px 30px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; background: white; font-weight: bold; }
+        .diff-btn.easy:hover { border-color: var(--success); color: var(--success); }
+        .diff-btn.med:hover { border-color: #f59e0b; color: #f59e0b; }
+        .diff-btn.hard:hover { border-color: var(--accent); color: var(--accent); }
+
+        .quiz-box { text-align: center; display: none; }
+        .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .option-btn { padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; background: #fff; font-size: 16px; }
+        .option-btn:hover { background: var(--primary); color: white; }
+
+        .resource-card { display: flex; align-items: center; padding: 15px; background: #fff; margin-bottom: 10px; border-radius: 10px; text-decoration: none; color: inherit; border: 1px solid #eee; }
+        .resource-card:hover { border-color: var(--primary); background: #f0f7ff; }
+        .yt-icon { width: 40px; height: 40px; background: red; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <div class="login-box">
+        <h1 style="margin-bottom:10px;">👋 韓語學習工作站</h1>
+        <p id="last-session-info" style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;"></p>
+        <input type="text" id="user-name-input" placeholder="輸入您的使用者名稱...">
+        <button class="diff-btn" style="width:100%; background:var(--primary); color:white; border:none;" onclick="login()">開始進入系統</button>
+    </div>
+</div>
+
+<div id="sidebar">
+    <div class="profile-area">
+        <div class="avatar" id="avatar-char">?</div>
+        <h3 id="display-name" style="margin: 10px 0 5px;">Guest</h3>
+        <div class="score-badge">今日總積分: <span id="user-points">0</span> / 7</div>
+        <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;" id="timer-display">累計學習: 00:00</div>
+    </div>
+    <nav class="nav-menu">
+        <button onclick="showSection('tutorial')" id="btn-tutorial">📚 基礎教學</button>
+        <button onclick="showSection('grammar')" id="btn-grammar">📐 組合與語序(詳細)</button>
+        <button onclick="showSection('practice')" id="btn-practice">🎮 實戰練習與考題</button>
+        <button onclick="showSection('resources')" id="btn-resources">🌐 學習資源</button>
+    </nav>
+</div>
+
+<div id="main-viewport">
+    <section id="tutorial" class="content-section">
+        <div class="card">
+            <h2>基礎教學：字母全表 (點擊可聽發音)</h2>
+            <h3>21個母音</h3>
+            <div class="hangul-grid" id="vowel-grid"></div>
+            <h3>19個子音</h3>
+            <div class="hangul-grid" id="consonant-grid"></div>
+        </div>
+    </section>
+
+    <section id="grammar" class="content-section">
+        <div class="card">
+            <h2>韓語方塊字組合邏輯 (全6種型態)</h2>
+            <p>韓文是拼音文字，每一個「方塊字」至少需要一個子音和一個母音構成，最多可以包含兩個尾音（收音）。</p>
+            
+            <div class="grammar-box">
+                <h4>1. 左右結構 (初聲 + 垂直母音)</h4>
+                <p>規則：子音在左，垂直型母音(ㅏ,ㅑ,ㅓ,ㅕ,ㅣ)在右。</p>
+                <p>範例：ㄱ + ㅏ = <strong>가</strong> (ga)</p>
+            </div>
+            
+            <div class="grammar-box">
+                <h4>2. 上下結構 (初聲 + 水平母音)</h4>
+                <p>規則：子音在上，水平型母音(ㅗ,ㅛ,ㅜ,ㅠ,ㅡ)在下。</p>
+                <p>範例：ㄱ + ㅗ = <strong>고</strong> (go)</p>
+            </div>
+            
+            <div class="grammar-box">
+                <h4>3. 複合結構 (初聲 + 複合母音)</h4>
+                <p>規則：子音在左上，複合母音(ㅘ,ㅝ,ㅢ等)包圍在下與右。</p>
+                <p>範例：ㄱ + ㅘ = <strong>과</strong> (gwa)</p>
+            </div>
+            
+            <div class="grammar-box">
+                <h4>4. 左右 + 底部收音 (初聲 + 垂直母音 + 終聲)</h4>
+                <p>規則：左右結構的下方加上一個子音作為收音。</p>
+                <p>範例：ㄱ + ㅏ + ㄴ = <strong>간</strong> (gan)</p>
+            </div>
+            
+            <div class="grammar-box">
+                <h4>5. 上下 + 底部收音 (初聲 + 水平母音 + 終聲)</h4>
+                <p>規則：上下結構的下方加上一個子音作為收音。</p>
+                <p>範例：ㄱ + ㅗ + ㅁ = <strong>곰</strong> (gom)</p>
+            </div>
+
+            <div class="grammar-box">
+                <h4>6. 複合 + 底部雙收音 (極限狀態)</h4>
+                <p>規則：複合母音結構下方加上雙子音收音。</p>
+                <p>範例：ㄱ + ㅙ + ㄴ = <strong>괜</strong> (gwaen) (如 괜찮다)</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>基本句型結構與語序 (全解析)</h2>
+            <p>韓語是黏著語，依靠「助詞」來標記單詞在句子中的成分。其核心語序為 <strong>SOV (主語 + 賓語 + 動詞)</strong>。</p>
+
+            <h3>1. 名詞述語句 (A是B)</h3>
+            <table class="grammar-table">
+                <tr><th>語序</th><th>韓文範例</th><th>中文翻譯</th></tr>
+                <tr><td>主語 + 名詞 + 이다(是)</td><td>저는 학생입니다.</td><td>我是學生。</td></tr>
+                <tr><td>主語 + 名詞 + 가/이 아니다(不是)</td><td>저는 의사가 아닙니다.</td><td>我不是醫生。</td></tr>
+            </table>
+
+            <h3>2. 形容詞述語句 (主語的狀態)</h3>
+            <table class="grammar-table">
+                <tr><th>語序</th><th>韓文範例</th><th>中文翻譯</th></tr>
+                <tr><td>主語 + 形容詞</td><td>날씨가 좋습니다.</td><td>天氣很好。</td></tr>
+                <tr><td>主語 + 程度副詞 + 形容詞</td><td>한국어가 아주 재미있습니다.</td><td>韓文非常有趣。</td></tr>
+            </table>
+
+            <h3>3. 動詞述語句 (完整 SOV 結構)</h3>
+            <table class="grammar-table">
+                <tr><th>語序</th><th>韓文範例</th><th>中文翻譯</th></tr>
+                <tr><td>主語 + 動詞</td><td>비가 옵니다.</td><td>下雨了。</td></tr>
+                <tr><td>主語 + 賓語 + 動詞</td><td>저는 사과를 먹습니다.</td><td>我吃蘋果。</td></tr>
+            </table>
+
+            <h3>4. 包含時間與地點的完整語序</h3>
+            <p>標準排序：<strong>主語 + 時間 + 地點 + 賓語 + 動詞</strong></p>
+            <table class="grammar-table">
+                <tr><th>語序拆解</th><th>韓文範例</th><th>對應中文</th></tr>
+                <tr><td>主語 (S)</td><td>저는 (我)</td><td>我</td></tr>
+                <tr><td>時間 (T)</td><td>오늘 (今天)</td><td>今天</td></tr>
+                <tr><td>地點 (P)</td><td>도서관에서 (在圖書館)</td><td>在圖書館</td></tr>
+                <tr><td>賓語 (O)</td><td>한국어를 (韓文)</td><td>韓文</td></tr>
+                <tr><td>動詞 (V)</td><td>공부합니다. (學習)</td><td>學習。</td></tr>
+                <tr><td colspan="3" style="background:#f1f5f9; text-align:center;"><strong>完整句子：저는 오늘 도서관에서 한국어를 공부합니다. (我今天在圖書館學習韓文。)</strong></td></tr>
+            </table>
+
+            <h3>5. 否定句語序 (兩種形式)</h3>
+            <table class="grammar-table">
+                <tr><th>否定類型</th><th>語序</th><th>韓文範例</th><th>中文翻譯</th></tr>
+                <tr><td>短形否定</td><td>主語 + 賓語 + 안 + 動詞</td><td>저는 고기를 안 먹어요.</td><td>我不吃肉。</td></tr>
+                <tr><td>長形否定</td><td>主語 + 賓語 + 動詞詞幹 + 지 않다</td><td>저는 고기를 먹지 않아요.</td><td>我不吃肉。</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <section id="practice" class="content-section">
+        <div class="card">
+            <h2>實戰練習與詞彙挑戰</h2>
+            <p>請選擇您的練習難易度：</p>
+            <div class="difficulty-select" id="difficulty-area">
+                <button class="diff-btn easy" onclick="startQuiz('easy')">簡單<br><small>基礎字母與問候</small></button>
+                <button class="diff-btn med" onclick="startQuiz('medium')">中等<br><small>常用動詞與單字</small></button>
+                <button class="diff-btn hard" onclick="startQuiz('hard')">困難<br><small>句型結構與語序</small></button>
+            </div>
+
+            <div class="quiz-box" id="quiz-container">
+                <div id="question-text" style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">題目載入中...</div>
+                <div class="option-grid" id="option-container"></div>
+                <button class="diff-btn" style="margin-top:20px; background:#94a3b8; border:none; color:white; padding:10px 20px; cursor:pointer;" onclick="exitQuiz()">返回難度選擇</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="resources" class="content-section">
+        <div class="card">
+            <h2>學習資源與建議延伸</h2>
+            <div id="resource-list"></div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const vowels = "ㅏ,ㅑ,ㅓ,ㅕ,ㅗ,ㅛ,ㅜ,ㅠ,ㅡ,ㅣ,ㅐ,ㅒ,ㅔ,ㅖ,ㅘ,ㅙ,ㅚ,ㅝ,ㅞ,ㅟ,ㅢ".split(',');
+    const consonants = "ㄱ,ㄴ,ㄷ,ㄹ,ㅁ,ㅂ,ㅅ,ㅇ,ㅈ,ㅊ,ㅋ,ㅌ,ㅍ,ㅎ,ㄲ,ㄸ,ㅃ,ㅆ,ㅉ".split(',');
+    
+    const quizData = {
+        easy: [
+            { q: "「안녕하세요」的意思是？", a: "你好", o: ["你好", "謝謝", "對不起", "再見"] },
+            { q: "韓文字母「ㄴ」的發音接近？", a: "n", o: ["k", "n", "m", "s"] },
+            { q: "「감사합니다」主要用於？", a: "表達感謝", o: ["表達感謝", "詢問姓名", "打招呼", "生氣"] },
+            { q: "「우유」的意思是？", a: "牛奶", o: ["麵包", "牛奶", "水", "咖啡"] }
+        ],
+        medium: [
+            { q: "「먹다」的意思是？", a: "吃", o: ["喝", "看", "吃", "走"] },
+            { q: "「학교」代表的地點是？", a: "學校", o: ["醫院", "學校", "公司", "超市"] },
+            { q: "「친구」的意思是？", a: "朋友", o: ["父母", "朋友", "老師", "醫生"] },
+            { q: "「사과」除了蘋果，還有什麼意思？", a: "道歉", o: ["香蕉", "道歉", "原諒", "高興"] }
+        ],
+        hard: [
+            { q: "韓文句型的基本語序為？", a: "主語 + 賓語 + 動詞", o: ["主語 + 動詞 + 賓語", "主語 + 賓語 + 動詞", "動詞 + 主語 + 賓語", "賓語 + 動詞 + 主語"] },
+            { q: "「我去學校」正確的韓文邏輯是？", a: "我 學校 去", o: ["我 去 學校", "我 學校 去", "去 學校 我", "學校 我 去"] },
+            { q: "「공부하다」這個詞組代表？", a: "學習", o: ["運動", "學習", "工作", "睡覺"] },
+            { q: "用於標示賓語（受詞）的助詞是？", a: "을/를", o: ["이/가", "은/는", "을/를", "에/에서"] }
+        ]
+    };
+
+    const resources = [
+        { title: "韓文字母正確發音 (YouTube 全集)", url: "https://www.youtube.com/results?search_query=korean+alphabet+pronunciation" },
+        { title: "韓文 100 句常用口語練習", url: "https://www.youtube.com/results?search_query=100+basic+korean+phrases" },
+        { title: "Show Me The Money 舞台與韓語饒舌聽力", url: "https://www.youtube.com/results?search_query=show+me+the+money+subtitles" },
+        { title: "韓國社會文化與職場現象分析", url: "https://www.youtube.com/results?search_query=American+Factory+Korean+industry" },
+        { title: "資訊管理專業韓語詞彙參考", url: "https://www.youtube.com/results?search_query=korean+IT+vocabulary" }
+    ];
+
+    let userData = { name: "", points: 0, totalTime: 0, lastLogin: "" };
+    let sessionStart = Date.now();
+    let currentDiff = 'easy';
+
+    window.onload = () => {
+        vowels.forEach(v => document.getElementById('vowel-grid').innerHTML += `<div class="char-card" onclick="speakText('${v}')"><span>${v}</span></div>`);
+        consonants.forEach(c => document.getElementById('consonant-grid').innerHTML += `<div class="char-card" onclick="speakText('${c}')"><span>${c}</span></div>`);
+        
+        resources.forEach(res => {
+            document.getElementById('resource-list').innerHTML += `
+                <a href="${res.url}" target="_blank" class="resource-card">
+                    <div class="yt-icon">▶</div>
+                    <div><strong>${res.title}</strong><br><small>點擊前往 YouTube</small></div>
+                </a>`;
+        });
+    };
+
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.8;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("您的瀏覽器不支援語音合成功能。");
+        }
+    }
+
+    function login() {
+        const nameInput = document.getElementById('user-name-input').value;
+        if (!nameInput) return alert("請輸入名稱");
+        
+        const saved = localStorage.getItem('korean_study_v3_' + nameInput);
+        if (saved) {
+            userData = JSON.parse(saved);
+            document.getElementById('last-session-info').innerHTML = 
+                `歡迎回來，上次進度：${userData.lastLogin}<br>積分：${userData.points} | 累計時長：${Math.floor(userData.totalTime/60)}分`;
+        }
+        
+        userData.name = nameInput;
+        userData.lastLogin = new Date().toLocaleString();
+        document.getElementById('display-name').innerText = nameInput;
+        document.getElementById('avatar-char').innerText = nameInput.charAt(0).toUpperCase();
+        document.getElementById('user-points').innerText = userData.points;
+        document.getElementById('login-overlay').style.display = 'none';
+        
+        showSection('tutorial');
+        startGlobalTimer();
+        save();
+    }
+
+    function showSection(id) {
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('btn-' + id).classList.add('active');
+    }
+
+    function startQuiz(diff) {
+        currentDiff = diff;
+        document.getElementById('difficulty-area').style.display = 'none';
+        document.getElementById('quiz-container').style.display = 'block';
+        nextQuestion();
+    }
+
+    function exitQuiz() {
+        document.getElementById('difficulty-area').style.display = 'flex';
+        document.getElementById('quiz-container').style.display = 'none';
+    }
+
+    function nextQuestion() {
+        const pool = quizData[currentDiff];
+        const question = pool[Math.floor(Math.random() * pool.length)];
+        
+        document.getElementById('question-text').innerText = question.q;
+        const optionsDiv = document.getElementById('option-container');
+        optionsDiv.innerHTML = '';
+        
+        question.o.sort(() => Math.random() - 0.5).forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                if (opt === question.a) {
+                    alert("答對了！積分 +1");
+                    userData.points++;
+                    document.getElementById('user-points').innerText = userData.points;
+                    save();
+                    nextQuestion();
+                } else {
+                    alert("答錯囉，再試一次！");
+                }
+            };
+            optionsDiv.appendChild(btn);
+        });
+    }
+
+    function startGlobalTimer() {
+        setInterval(() => {
+            const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+            const displayMin = Math.floor(elapsed / 60);
+            const displaySec = elapsed % 60;
+            document.getElementById('timer-display').innerText = `累計學習: ${displayMin.toString().padStart(2, '0')}:${displaySec.toString().padStart(2, '0')}`;
+            
+            if (elapsed > 0 && elapsed % 1800 === 0) {
+                userData.points++;
+                document.getElementById('user-points').innerText = userData.points;
+                alert("達成專注學習 30 分鐘！積分 +1");
+                save();
+            }
+        }, 1000);
+    }
+
+    function save() {
+        const currentElapsed = Math.floor((Date.now() - sessionStart) / 1000);
+        const persistData = { ...userData };
+        persistData.totalTime += currentElapsed;
+        localStorage.setItem('korean_study_v3_' + userData.name, JSON.stringify(persistData));
+    }
+
+    window.onbeforeunload = save;
+</script>
+
+</body>
+</html>
